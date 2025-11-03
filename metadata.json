@@ -1,0 +1,5 @@
+{
+  "name": "Starfleet Battles",
+  "description": "A real-time 3D space warfare game where players command ships on a 2D hexagonal plane. Features include a multi-camera system, modular ship components (hulls, shields, weapons), and an indirect, tactical control interface.",
+  "requestFramePermissions": []
+}
