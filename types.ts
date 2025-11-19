@@ -1,6 +1,8 @@
 
 export enum ShipType {
   FIGHTER = 'FIGHTER',
+  FRIGATE = 'FRIGATE',
+  CRUISER = 'CRUISER',
 }
 
 export enum Faction {
@@ -15,9 +17,11 @@ export enum AlertLevel {
 }
 
 export enum CameraView {
-  TOP_DOWN = 'Top Down',
-  CHASE = 'Chase',
-  TARGET = 'Target',
+  TOP_DOWN = 'Top Down (F1)',
+  CHASE = 'Chase (F2)',
+  TARGET = 'Target (F3)',
+  TACTICAL = 'Tactical (F4)',
+  COCKPIT = 'Cockpit (F5)',
 }
 
 export enum GameSpeed {
@@ -27,12 +31,21 @@ export enum GameSpeed {
   FAST = 'FAST',
 }
 
+export enum Screen {
+  MAIN_MENU = 'MAIN_MENU',
+  CAMPAIGN = 'CAMPAIGN',
+  LOBBY = 'LOBBY',
+  TACTICAL = 'TACTICAL',
+}
+
 export enum ManeuverType {
   EMERGENCY_STOP = 'Emergency Stop',
   FAST_TURN_LEFT = 'Fast Turn 90 Left',
   FAST_TURN_RIGHT = 'Fast Turn 90 Right',
   FAST_180 = 'Fast Turn 180',
   FAST_TURN_FREE = 'Fast Turn Free',
+  HET = 'High Energy Turn',
+  ERRATIC = 'Erratic Maneuvers',
 }
 
 export interface ActiveManeuver {
@@ -40,37 +53,36 @@ export interface ActiveManeuver {
   charge: number;
   chargeNeeded: number;
   status: 'charging' | 'executing';
-  startTime?: number; // For timed maneuvers
-  startRotation?: number; // For smooth turn maneuvers
-  targetRotation?: number; // For smooth turn maneuvers
-  duration?: number; // For smooth turn maneuvers
+  startTime?: number;
+  startRotation?: number;
+  targetRotation?: number;
+  duration?: number;
 }
 
 export interface Decoy {
     id: number;
     position: [number, number, number];
-    life: number; // seconds
+    life: number;
     startTime: number;
     ownerId: number;
 }
 
-
 export interface ShieldSegment {
   current: number;
   max: number;
-  energyAllocation: number; // Player-set value, e.g., 0-10
+  energyAllocation: number;
 }
 
 export interface Weapon {
   name: string;
   type: 'energy' | 'projectile';
-  damage: number; // Base damage at optimal charge
-  range: number; // Base range at optimal charge
+  group: number; // 1-4
+  mode: 'NORMAL' | 'OVERLOAD' | 'PROXIMITY';
+  damage: number;
+  range: number;
   fireRate: number;
   lastFired: number;
-  
-  // New energy properties for 'energy' type weapons
-  energyAllocation: number; // Player-set value
+  energyAllocation: number;
   currentCharge: number;
   minChargeToFire: number;
   optimalCharge: number;
@@ -82,7 +94,15 @@ export interface Engines {
 }
 
 export interface PowerPlant {
-    output: number; // Energy units per second
+    output: number;
+    batteries: number;
+    batteryOutput: number;
+}
+
+export interface EWSystem {
+    ecm: number; // 0-10
+    eccm: number; // 0-10
+    rating: number; // Max combined
 }
 
 export interface Ship {
@@ -97,14 +117,15 @@ export interface Ship {
   maxSpeed: number;
   currentSpeed: number;
   desiredSpeed: number;
-  acceleration: number; // Base acceleration
+  acceleration: number;
   turnRate: number;
-  hull: { current: number; max: number };
   
+  hull: { current: number; max: number };
   power: PowerPlant;
   engines: Engines;
   shields: ShieldSegment[];
   weapons: Weapon[];
+  ew: EWSystem;
   
   modelPath: string;
   scale: number;
@@ -112,17 +133,22 @@ export interface Ship {
   isErratic: boolean;
   visualRotationOffsetY?: number;
   isIntercepting: boolean;
-
-  // New defensive properties
+  
+  // Defensive Systems
   pointDefenseActive: boolean;
   tractorBeams: {
       total: number;
       defensiveAllocation: number;
+      holding: boolean;
   };
   decoys: {
       available: number;
       max: number;
   };
+  
+  // Fleet
+  fleetId?: string;
+  formation?: 'LINE' | 'CHEVRON' | 'LOOSE';
 }
 
 export interface Projectile {
@@ -136,6 +162,7 @@ export interface Projectile {
 }
 
 export interface GameState {
+  screen: Screen;
   ships: Ship[];
   projectiles: Projectile[];
   decoys: Decoy[];

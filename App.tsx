@@ -2,13 +2,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { GameCanvas } from './components/GameCanvas';
 import { MainUI } from './components/UI/MainUI';
-import { Ship, GameState, CameraView, ShipType, Faction, AlertLevel, GameSpeed, ManeuverType, Decoy } from './types';
+import { MainMenu } from './components/UI/MainMenu';
+import { Ship, GameState, CameraView, ShipType, Faction, AlertLevel, GameSpeed, ManeuverType, Decoy, Screen } from './types';
 import { initialShips } from './constants';
 import * as THREE from 'three';
 
 
 const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>({
+    screen: Screen.MAIN_MENU,
     ships: initialShips,
     projectiles: [],
     decoys: [],
@@ -57,7 +59,6 @@ const App: React.FC = () => {
     setGameState(prev => {
         const ships = prev.ships.map(ship => {
             if (ship.id === prev.selectedShipId) {
-                // Create deep enough copies to avoid mutation
                 const newShip = { 
                     ...ship, 
                     shields: ship.shields.map(s => ({...s})), 
@@ -81,9 +82,10 @@ const App: React.FC = () => {
 
   const handleInitiateManeuver = useCallback((maneuverType: ManeuverType) => {
     setGameState(prev => {
-        if (prev.activeManeuver) return prev; // Don't start a new one if one is active
+        if (prev.activeManeuver) return prev; 
         const playerShip = prev.ships.find(s => s.id === prev.selectedShipId);
-        if (playerShip?.isErratic || playerShip?.isIntercepting) return prev; // Can't start while doing other helm actions
+        if (playerShip?.isErratic || playerShip?.isIntercepting) return prev; 
+        
         return {
             ...prev,
             activeManeuver: {
@@ -119,7 +121,7 @@ const App: React.FC = () => {
                   return {
                       ...ship,
                       isErratic: newIsErratic,
-                      isIntercepting: newIsErratic ? false : ship.isIntercepting // Turn off intercept if erratic is on
+                      isIntercepting: newIsErratic ? false : ship.isIntercepting 
                   };
               }
               return ship;
@@ -134,7 +136,7 @@ const App: React.FC = () => {
       if (!playerShip || prev.activeManeuver) return prev;
       
       const isCurrentlyIntercepting = playerShip.isIntercepting;
-      if (!isCurrentlyIntercepting && !prev.targetShipId) return prev; // Can't turn on without a target
+      if (!isCurrentlyIntercepting && !prev.targetShipId) return prev;
 
       return {
           ...prev,
@@ -144,8 +146,8 @@ const App: React.FC = () => {
                   return { 
                       ...ship, 
                       isIntercepting: newIsIntercepting,
-                      isErratic: newIsIntercepting ? false : ship.isErratic, // Turn off erratic if intercepting
-                      targetRotation: null // Always clear manual rotation target when toggling
+                      isErratic: newIsIntercepting ? false : ship.isErratic,
+                      targetRotation: null 
                   };
               }
               return ship;
@@ -178,12 +180,12 @@ const App: React.FC = () => {
         if (!playerShip || playerShip.decoys.available <= 0) return prev;
 
         const forwardVec = new THREE.Vector3(0, 0, 1).applyEuler(new THREE.Euler(...playerShip.rotation, 'YXZ'));
-        const launchPos = new THREE.Vector3(...playerShip.position).add(forwardVec.multiplyScalar(-8)); // launch 8 units behind
+        const launchPos = new THREE.Vector3(...playerShip.position).add(forwardVec.multiplyScalar(-8)); 
 
         const newDecoy: Decoy = {
             id: Date.now(),
             position: launchPos.toArray(),
-            life: 30, // 30 seconds
+            life: 30, 
             startTime: 0,
             ownerId: playerShip.id,
         };
@@ -206,11 +208,17 @@ const App: React.FC = () => {
     setGameState(updater);
   }, []);
 
+  const handleNavigate = (screen: Screen) => {
+    setGameState(prev => ({...prev, screen}));
+  }
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'F1') setCameraView(CameraView.TOP_DOWN);
       if (event.key === 'F2') setCameraView(CameraView.CHASE);
       if (event.key === 'F3') setCameraView(CameraView.TARGET);
+      if (event.key === 'F4') setCameraView(CameraView.TACTICAL);
+      if (event.key === 'F5') setCameraView(CameraView.COCKPIT);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -220,36 +228,43 @@ const App: React.FC = () => {
   const targetShip = gameState.ships.find(s => s.id === gameState.targetShipId);
 
   return (
-    <div className="w-screen h-screen overflow-hidden">
-      <GameCanvas 
-        gameState={gameState} 
-        cameraView={cameraView} 
-        onSetTargetRotation={handleSetTargetRotation}
-        onSetTargetShipId={handleSetTargetShipId}
-        updateGameState={updateGameState}
-        gameSpeed={gameSpeed}
-      />
-      {playerShip && (
-        <MainUI 
-          playerShip={playerShip}
-          targetShip={targetShip}
-          cameraView={cameraView}
-          setCameraView={setCameraView}
-          onSetDesiredSpeed={handleSetDesiredSpeed}
-          onSetAlertLevel={handleSetAlertLevel}
-          onSetEnergyAllocation={handleSetEnergyAllocation}
-          gameSpeed={gameSpeed}
-          onSetGameSpeed={setGameSpeed}
-          activeManeuver={gameState.activeManeuver}
-          onInitiateManeuver={handleInitiateManeuver}
-          onCancelManeuver={handleCancelManeuver}
-          onToggleErraticManeuvers={handleToggleErraticManeuvers}
-          onToggleIntercept={handleToggleIntercept}
-          onTogglePointDefense={handleTogglePointDefense}
-          onSetDefensiveTractors={handleSetDefensiveTractors}
-          onLaunchDecoy={handleLaunchDecoy}
-        />
-      )}
+    <div className="w-screen h-screen overflow-hidden bg-black">
+        {gameState.screen === Screen.MAIN_MENU || gameState.screen === Screen.CAMPAIGN || gameState.screen === Screen.LOBBY ? (
+            <MainMenu currentScreen={gameState.screen} onNavigate={handleNavigate} />
+        ) : (
+            <>
+            <GameCanvas 
+                gameState={gameState} 
+                cameraView={cameraView} 
+                onSetTargetRotation={handleSetTargetRotation}
+                onSetTargetShipId={handleSetTargetShipId}
+                updateGameState={updateGameState}
+                gameSpeed={gameSpeed}
+            />
+            {playerShip && (
+                <MainUI 
+                playerShip={playerShip}
+                targetShip={targetShip}
+                cameraView={cameraView}
+                setCameraView={setCameraView}
+                onSetDesiredSpeed={handleSetDesiredSpeed}
+                onSetAlertLevel={handleSetAlertLevel}
+                onSetEnergyAllocation={handleSetEnergyAllocation}
+                gameSpeed={gameSpeed}
+                onSetGameSpeed={setGameSpeed}
+                activeManeuver={gameState.activeManeuver}
+                onInitiateManeuver={handleInitiateManeuver}
+                onCancelManeuver={handleCancelManeuver}
+                onToggleErraticManeuvers={handleToggleErraticManeuvers}
+                onToggleIntercept={handleToggleIntercept}
+                onTogglePointDefense={handleTogglePointDefense}
+                onSetDefensiveTractors={handleSetDefensiveTractors}
+                onLaunchDecoy={handleLaunchDecoy}
+                onNavigate={handleNavigate}
+                />
+            )}
+            </>
+        )}
     </div>
   );
 };

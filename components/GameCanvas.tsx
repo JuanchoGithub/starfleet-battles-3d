@@ -129,7 +129,7 @@ const Scene: React.FC<GameCanvasProps> = ({ gameState, cameraView, onSetTargetRo
                                   const velocityVec = forward.multiplyScalar(30);
                                   tempNewProjectiles.push({
                                       id: Date.now() + Math.random(),
-                                      position: [...updatedShip.position],
+                                      position: [updatedShip.position[0], updatedShip.position[1], updatedShip.position[2]],
                                       velocity: [velocityVec.x, velocityVec.y, velocityVec.z],
                                       damage: weapon.damage,
                                       range: weapon.range,

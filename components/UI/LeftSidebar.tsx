@@ -26,8 +26,9 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
     onSetDefensiveTractors, onLaunchDecoy,
 }) => {
   return (
-    <div className="absolute top-0 left-0 h-screen w-80 flex flex-col p-2 gap-2 pointer-events-auto">
-      <div className="h-[40%]">
+    <div className="h-full w-full flex flex-col gap-2">
+      {/* Main MFD Block */}
+      <div className="flex-1 min-h-0">
         <ManagementPanel 
             playerShip={playerShip} 
             targetShip={targetShip}
@@ -42,14 +43,11 @@ export const LeftSidebar: React.FC<LeftSidebarProps> = ({
             onLaunchDecoy={onLaunchDecoy}
         />
       </div>
-      <div className="h-[25%]">
-        <ShipInfoPanel playerShip={playerShip} />
-      </div>
-      <div className="h-[20%]">
-        {targetShip && <TargetInfo targetShip={targetShip} playerShip={playerShip} />}
-      </div>
-      <div className="h-[15%]">
+      
+      {/* Mini Status Panels at bottom of sidebar */}
+      <div className="h-48 flex flex-col gap-2 shrink-0">
         <ShieldPanel playerShip={playerShip} onSetEnergyAllocation={onSetEnergyAllocation} />
+        {/* Optionally put TargetInfo here if not on the right */}
       </div>
     </div>
   );
